@@ -997,6 +997,7 @@ typedef union {
 	ubx_payload_rx_rxm_sfrbx_part2_t  payload_rx_rxm_sfrbx_part2;
 	ubx_payload_rx_rxm_rawx_part1_t   payload_rx_rxm_rawx_part1;
 	ubx_payload_rx_rxm_rawx_part2_t   payload_rx_rxm_rawx_part2;
+	uint8_t			   	  scratch[4096];
 } ubx_buf_t;
 
 #pragma pack(pop)

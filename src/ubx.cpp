@@ -49,6 +49,7 @@
  * @see https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_%28UBX-13003221%29_Public.pdf
  * @see https://www.u-blox.com/sites/default/files/ZED-F9P_InterfaceDescription_%28UBX-18010854%29.pdf
  */
+#define DEBUG_BUILD
 
 #include <cmath>
 #include <string.h>
@@ -59,14 +60,23 @@
 #define MIN(X,Y)              ((X) < (Y) ? (X) : (Y))
 #define SWAP16(X)             ((((X) >>  8) & 0x00ff) | (((X) << 8) & 0xff00))
 
-/**** Trace macros, disable for production builds */
-#define UBX_TRACE_PARSER(...) {/*GPS_INFO(__VA_ARGS__);*/}    // decoding progress in parse_char()
-#define UBX_TRACE_RXMSG(...)  {/*GPS_INFO(__VA_ARGS__);*/}    // Rx msgs in payload_rx_done()
+/*** Trace macros
+ * By default disabled for production builds. Enable by compiling with -DUBX_TRACE_ENABLE=1
+ */
+//#ifndef UBX_TRACE_ENABLE
+#define UBX_TRACE_PARSER(...) {GPS_INFO(__VA_ARGS__);}    // decoding progress in parse_char()
+#define UBX_TRACE_RXMSG(...)  {GPS_INFO(__VA_ARGS__);}    // Rx msgs in payload_rx_done()
 #define UBX_TRACE_SVINFO(...) {/*GPS_INFO(__VA_ARGS__);*/}    // NAV-SVINFO processing (debug use only, will cause rx buffer overflows)
 
-/**** Warning macros, disable to save memory */
+/*** Warning/Debug macros
+ * UBX_WARN is always enabled. UBX_DEBUG is enabled with -DUBX_DEBUG_ENABLE=1
+ */
 #define UBX_WARN(...)         {GPS_WARN(__VA_ARGS__);}
-#define UBX_DEBUG(...)        {/*GPS_WARN(__VA_ARGS__);*/}
+#ifndef UBX_DEBUG_ENABLE
+#define UBX_DEBUG(...)        {GPS_WARN(__VA_ARGS__);}
+#else
+#define UBX_DEBUG(...)        {GPS_WARN(__VA_ARGS__);}
+#endif
 
 GPSDriverUBX::GPSDriverUBX(Interface gpsInterface, GPSCallbackPtr callback, void *callback_user,
 			   sensor_gps_s *gps_position, satellite_info_s *satellite_info, Settings settings) :
@@ -86,6 +96,12 @@ GPSDriverUBX::GPSDriverUBX(Interface gpsInterface, GPSCallbackPtr callback, void
 	_jam_det_sensitivity_hi(settings.jam_det_sensitivity_hi)
 {
 	decodeInit();
+	GPS_INFO("UBX driver instantiated (iface=%s, mode=%d, rate=%u, dyn_model=%u, jam_hi=%u)",
+			_interface == Interface::UART ? "UART" : "SPI",
+			static_cast<int>(_mode),
+			static_cast<unsigned>(_output_rate),
+			static_cast<unsigned>(_dyn_model),
+			static_cast<unsigned>(_jam_det_sensitivity_hi));
 }
 
 GPSDriverUBX::~GPSDriverUBX()
@@ -98,6 +114,11 @@ GPSDriverUBX::configure(unsigned &baudrate, const GPSConfig &config)
 {
 	_configured = false;
 	_output_mode = config.output_mode;
+
+	GPS_INFO("UBX configure begin (auto_baud=%s, output_mode=%u, cfg_wipe=%u)",
+			(baudrate == 0) ? "yes" : "no",
+			static_cast<unsigned>(_output_mode),
+			config.cfg_wipe ? 1u : 0u);
 
 	ubx_payload_tx_cfg_prt_t cfg_prt[2];
 
@@ -384,6 +405,12 @@ GPSDriverUBX::configure(unsigned &baudrate, const GPSConfig &config)
 	}
 
 	_configured = true;
+	GPS_INFO("UBX configured OK (board=%d, proto_v27=%d, baud=%u, output_mode=%u, mode=%d)",
+			static_cast<int>(_board),
+			static_cast<int>(_proto_ver_27_or_higher),
+			baudrate,
+			static_cast<unsigned>(_output_mode),
+			static_cast<int>(_mode));
 	return 0;
 }
 
@@ -1552,13 +1579,13 @@ GPSDriverUBX::parseChar(const uint8_t b)
 
 		switch (_rx_msg) {
 
-		case UBX_MSG_RXM_RAWX:
-			ret = payloadRxAddRawx(b);
-			break;
+		// case UBX_MSG_RXM_RAWX:
+		// 	ret = payloadRxAddRawx(b);
+		// 	break;
 
-		case UBX_MSG_RXM_SFRBX:
-			ret = payloadRxAddSfrbx(b);
-			break;
+		// case UBX_MSG_RXM_SFRBX:
+		// 	ret = payloadRxAddSfrbx(b);
+		// 	break;
 
 		case UBX_MSG_NAV_SAT:
 			ret = payloadRxAddNavSat(b);	// add a NAV-SAT payload byte
