@@ -64,7 +64,7 @@
  * By default disabled for production builds. Enable by compiling with -DUBX_TRACE_ENABLE=1
  */
 //#ifndef UBX_TRACE_ENABLE
-#define UBX_TRACE_PARSER(...) {GPS_INFO(__VA_ARGS__);}    // decoding progress in parse_char()
+#define UBX_TRACE_PARSER(...) {/*GPS_INFO(__VA_ARGS__);*/}    // decoding progress in parse_char()
 #define UBX_TRACE_RXMSG(...)  {GPS_INFO(__VA_ARGS__);}    // Rx msgs in payload_rx_done()
 #define UBX_TRACE_SVINFO(...) {/*GPS_INFO(__VA_ARGS__);*/}    // NAV-SVINFO processing (debug use only, will cause rx buffer overflows)
 
@@ -1579,13 +1579,13 @@ GPSDriverUBX::parseChar(const uint8_t b)
 
 		switch (_rx_msg) {
 
-		// case UBX_MSG_RXM_RAWX:
-		// 	ret = payloadRxAddRawx(b);
-		// 	break;
+		case UBX_MSG_RXM_RAWX:
+			ret = payloadRxAddRawx(b);
+			break;
 
-		// case UBX_MSG_RXM_SFRBX:
-		// 	ret = payloadRxAddSfrbx(b);
-		// 	break;
+		case UBX_MSG_RXM_SFRBX:
+			ret = payloadRxAddSfrbx(b);
+			break;
 
 		case UBX_MSG_NAV_SAT:
 			ret = payloadRxAddNavSat(b);	// add a NAV-SAT payload byte
